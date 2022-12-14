@@ -1,0 +1,20 @@
+{
+  "name": "hotel-booking-frontend",
+  "version": "1.0.0",
+  "description": "",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "test": "exit 0",
+    "build": "rimraf dist && tsc",
+    "watch": "tsc -w",
+    "format": "prettier --write \"src/**/*.ts\"",
+    "lint": "eslint \"{src,apps,libs,test}/**/*.ts\" --fix"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC"
+}

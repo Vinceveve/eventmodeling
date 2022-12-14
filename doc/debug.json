@@ -1,0 +1,35 @@
+{
+  "specversion": "1.0",
+  "type": "CommandDoneEvent",
+  "source": "BookRoomCommandHandler",
+  "id": "92ee3d08-9798-4a95-80dd-af042f88e758",
+  "time": "2022-12-08T20:31:34.235Z",
+  "data": {
+    "name": "BookRoomCommand",
+    "command": {
+      "data": {
+        "room": {
+          "id": 2
+        },
+        "hotel": {
+          "id": 1
+        },
+        "client": {
+          "id": 19
+        },
+        "bookedDate": "2022-12-09"
+      },
+      "source": "HotelBookingHttpController",
+      "correlationId": "af0f6d2a-ca16-49c1-9053-6a6dbd8069e7"
+    },
+    "events": [
+      {
+        "name": "RoomBookedEvent",
+        "subject": "hotel.1.booking.room-booked.2.on.2022-12-09",
+        "stream": "hotel-booking",
+        "seq": 3
+      }
+    ]
+  },
+  "correlationId": "91a91399-1918-483d-98f8-b8a01f64f79c"
+}

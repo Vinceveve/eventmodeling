@@ -1,0 +1,41 @@
+{
+  "name": "hotel-booking-backend",
+  "version": "1.0.0",
+  "description": "",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "test": "exit 0",
+    "build": "rimraf dist && tsc",
+    "watch": "tsc -w",
+    "format": "prettier --write \"src/**/*.ts\"",
+    "lint": "eslint \"{src,apps,libs,test}/**/*.ts\" --fix"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@nestjs/microservices": "^9.2.1",
+    "@nestjs/common": "^9.2.1",
+    "@nestjs/platform-express": "^9.2.1",
+    "@nestjs/core": "^9.2.1",
+    "class-validator-jsonschema": "^3.1.1",
+    "cloudevents": "^6.0.3",
+    "nanoid": "^4.0.0",
+    "nats": "^2.9.2",
+    "nats-jetstream-transport": "^0.2.0",
+    "rxjs": "^7.6.0"
+  },
+  "devDependencies": {
+    "@types/node": "^18.11.15",
+    "@typescript-eslint/eslint-plugin": "^5.46.1",
+    "eslint-config-prettier": "^8.5.0",
+    "eslint-plugin-prettier": "^4.2.1",
+    "prettier": "^2.8.1",
+    "rimraf": "^3.0.2",
+    "typescript": "^4.9.4"
+  }
+}
