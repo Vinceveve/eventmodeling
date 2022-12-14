@@ -25,7 +25,7 @@
       "packageName": "hotel-booking-frontend",
       "decoupledLocalDependencies": ["model"],
       "projectFolder": "feature/hotel-booking/frontend",
-      "tags": ["feature", "hotel-booking", "backend" ]
+      "tags": ["feature", "hotel-booking", "frontend" ]
     }
 
   ]

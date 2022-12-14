@@ -88,7 +88,7 @@ Our core domain
 - [Centralise validation rules using code](https://github.com/epiphone/class-validator-jsonschema)
 - [Modelina is the official AsyncAPI SDK to generate data models](https://www.npmjs.com/package/@asyncapi/modelina)
 
-![Full Application layers](assets/architecture.png)
+![Full Application layers](doc/architecture.png)
 
 
 ## Run it
@@ -123,7 +123,6 @@ curl --request PUT \
  --data '{
     "data": {
       "room": { "id" : 1 },
-      "hotel": { "id" : 1},
       "client": { "id": 1},
       "date": "2022-12-13"
     }
