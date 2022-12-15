@@ -3,6 +3,6 @@
   "version": "1.0.0",
   "dependencies": {
     "nats": "^2.9.2",
-    "cloudevents": "6.0.3"
+    "cloudevents": "^6.0.3"
   }
 }
