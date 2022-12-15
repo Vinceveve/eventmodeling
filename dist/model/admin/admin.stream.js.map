@@ -1,0 +1,1 @@
+{"version":3,"file":"admin.stream.js","sourceRoot":"","sources":["../../../model/admin/admin.stream.ts"],"names":[],"mappings":";;;AACO,MAAM,YAAY,GAAG,CAAC,OAAe,EAAE,MAAc,EAAU,EAAE;IACtE,OAAO,SAAS,OAAO,eAAe,MAAM,EAAE,CAAC;AACjD,CAAC,CAAC;AAFW,QAAA,YAAY,gBAEvB;AACW,QAAA,WAAW,GAAG;IACzB,IAAI,EAAE,sBAAsB;IAC5B,WAAW,EAAE,2BAA2B;IACxC,QAAQ,EAAE,CAAC,sBAAsB,CAAC;CACV,CAAC"}
