@@ -49,7 +49,7 @@ importers:
 
   ../../model:
     specifiers:
-      cloudevents: 6.0.3
+      cloudevents: ^6.0.3
       nats: ^2.9.2
     dependencies:
       cloudevents: 6.0.3
