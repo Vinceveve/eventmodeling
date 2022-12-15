@@ -4,6 +4,7 @@
   "pnpmVersion": "7.18.2",
   "nodeSupportedVersionRange": ">=16.13.0 <19.0.0",
   "projectFolderMaxDepth": 3,
+  "ensureConsistentVersions": true,
   "repository": {
     "url": "https://github.com/vinceveve/eventmodeling",
     "defaultBranch": "main",

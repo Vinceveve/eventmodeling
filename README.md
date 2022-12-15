@@ -85,7 +85,7 @@ Our core domain
 
 - A data model with an ID.
 - Used to derivate other DTO : event, command, query results, ...
-- [Centralise validation rules using code](https://github.com/epiphone/class-validator-jsonschema)
+- Centralise validation rules using class validator with [JSON Schema](https://github.com/epiphone/class-validator-jsonschema) or [AsyncAPI schema](https://www.npmjs.com/package/nestjs-asyncapi) 
 - [Modelina is the official AsyncAPI SDK to generate data models](https://www.npmjs.com/package/@asyncapi/modelina)
 
 ![Full Application layers](doc/architecture.png)
@@ -94,7 +94,9 @@ Our core domain
 ## Run it
 ```bash
 docker run -d --name nats -p 4222:4222 -p 8222:8222 -p 6222:6222 nats --jetstream -m 8222
-ts-node main.ts 
+
+rush install
+ts-node feature/hotel-booking/backend/main.ts 
 
 curl --request PUT \
  --url http://127.0.0.1:3000/mutation/book-room \
@@ -142,11 +144,10 @@ nats stream view room-cleanup --subject='cleanup.1.2022-12-12.1_2022-12-12'
 - [x] Event|Command validation
   - [x] Use CloudEvent as base event interface on driver
   - [x] Use CloudEvent as base command interface
-  - [ ] Middleware validation JSON Schema validation and generation https://www.npmjs.com/package/@asyncapi/modelina
-- [ ] Ordering and flow control
-  - [ ] pullSubscription
+  - [ ] Middleware validation 
 - [x] Idempotency
   - [x] publish options per event's emit
+  - [ ] Fix Expect last subject sequence not working (poc root)
 - [x] Shared state with materialized views
   - [x] allow access to nats JetStream KeyStore from client
   - [x] mapper to nats Keystore table.id.attributes = bucket.key.value
@@ -164,6 +165,7 @@ nats stream view room-cleanup --subject='cleanup.1.2022-12-12.1_2022-12-12'
   - [ ] send message
   - [x] simplify NatsJetStreamClient+Proxy
 - [x] Subscribing
+  - [ ] Pull Subscription 
   - [x] One specific consumer per destination
   - [x] consumer
   - [ ] message handler with nats
