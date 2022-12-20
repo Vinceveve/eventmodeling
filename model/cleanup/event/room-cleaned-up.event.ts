@@ -6,8 +6,8 @@ type RoomCleanedUpData = {
   room: Pick<RoomEntity, "id">;
 };
 export class RoomCleanedUpEvent extends AppCloudEvent {
-  specversion: string = "1.0";
-  type: string = this.constructor.name;
+  static specversion: string = "1.0";
+  static type: string = "RoomCleanedUpEvent";
   constructor(
     data: RoomCleanedUpData,
     source: string,

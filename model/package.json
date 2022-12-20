@@ -8,7 +8,7 @@
     "dist"
   ],
   "dependencies": {
-    "nats": "^2.9.2",
+    "nats": "^2.10.0",
     "cloudevents": "^6.0.3"
   },
     "scripts": {

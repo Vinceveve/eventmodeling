@@ -1,9 +1,9 @@
 import { NatsJetStreamClient } from "nats-jetstream-transport";
-import { Injectable, Logger } from "@nestjs/common";
+import { ConflictException, Injectable, Logger } from "@nestjs/common";
 import { RoomCleaningScheduledEvent } from "../../../../../model/cleanup/event/room-cleaning-scheduled.event";
 import { HotelEntity } from "../../../../../model/admin/hotel.entity";
 import { RoomEntity } from "../../../../../model/admin/room.entity";
-import { cleanupSubject } from "../../../../../model/cleanup/cleanup.stream";
+import { CleanupStream } from "../../../../../model/cleanup/cleanup.stream";
 
 export interface ScheduleCleaningCommand {
   source: string;
@@ -26,19 +26,29 @@ export class ScheduleCleaningCommandHandler {
     const correlationId = command.correlationId;
     const isoDate = new Date(command.data.date);
     const day = isoDate.toISOString().split("T")[0];
-    this.logger.log(
-      `Schedule cleaning for room ${command.data.room.id} #${correlationId}`
-    );
+    const roomId = command.data.room.id;
+    this.logger.log(`Schedule cleaning for room ${roomId} #${correlationId}`);
 
-    const res = await this.client.publish(
-      cleanupSubject(command.data.room.id, day, correlationId),
-      new RoomCleaningScheduledEvent(command.data, source, correlationId),
-      { msgID: `cleanup-${correlationId}` }
+    const event = new RoomCleaningScheduledEvent(
+      command.data,
+      source,
+      correlationId
     );
+    const subject = CleanupStream.buildsubject({ roomId, day, event });
 
-    this.logger.log(
-      `Cleaning scheduled for room ${command.data.room.id} #${correlationId}`
-    );
+    const res = await this.client
+      .publish(
+        subject,
+        event,
+        // Must be only one cleanup scheduled per day
+        { expect: { lastSubjectSequence: 0 } }
+      )
+      .catch((e) => {
+        const error = `Can't schedule cleaning if room ${roomId} has cleaning already scheduled #${correlationId}`;
+        this.logger.error(error);
+        throw new ConflictException(error);
+      });
+    this.logger.log(`Cleaning scheduled for room ${roomId} #${correlationId}`);
     return res;
   }
 }

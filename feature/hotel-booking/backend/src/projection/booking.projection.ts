@@ -8,7 +8,6 @@ import { NatsJetStreamKeyStore } from "nats-jetstream-transport";
 import { GuestCheckedInEvent } from "../../../../../model/booking/event/guest-checked-in.event";
 import { RoomBookedEvent } from "../../../../../model/booking/event/room-booked.event";
 import { RoomAvailableEvent } from "../../../../../model/booking/event/room-available.event";
-import { stat } from "fs";
 
 @Injectable()
 export class BookingProjection {
@@ -45,7 +44,9 @@ export class BookingProjection {
       this.logger.log(`Key ${key} does not exists, create it`);
       await booking.create(key, this.codec.encode(newState));
     } else if (state != newState) {
-      this.logger.log(`State is different for ${key}, update it`);
+      this.logger.log(
+        `State is different for ${key}, update it ${state.availability}`
+      );
       await booking.put(key, this.codec.encode(newState));
     }
     return newState;

@@ -10,7 +10,7 @@ import { RoomAvailableEvent } from "../../../../../model/booking/event/room-avai
 
 import { GuestCheckedInEvent } from "../../../../../model/booking/event/guest-checked-in.event";
 import { RoomBookedEvent } from "../../../../../model/booking/event/room-booked.event";
-import { bookingStream } from "../../../../../model/booking/booking.stream";
+import { BookingStream } from "../../../../../model/booking/booking.stream";
 
 @Controller()
 export class ReadModelNatsController {
@@ -18,7 +18,7 @@ export class ReadModelNatsController {
 
   @EventPattern("BookingProjection", {
     description: "Maintain Booking read model state from events",
-    subject: bookingStream.subjects[0],
+    subject: "booking.>",
     durable: "bookingState",
     deliverTo: "bookingState",
     manualAck: true,
@@ -29,7 +29,6 @@ export class ReadModelNatsController {
     @Ctx() context: NatsJetStreamContext
   ) {
     await this.bookingState.handle(event);
-
     context.message.ack();
   }
 }

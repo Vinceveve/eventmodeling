@@ -3,8 +3,12 @@ import { CustomStrategy } from "@nestjs/microservices";
 import { NatsJetStreamServer } from "nats-jetstream-transport";
 import { HotelBookingModule } from "./src/hotel-booking.module";
 import os = require("os");
-import { bookingStream } from "../../../model/booking/booking.stream";
-import { cleanupStream } from "../../../model/cleanup/cleanup.stream";
+import { BookingStream } from "../../../model/booking/booking.stream";
+import { CleanupStream } from "../../../model/cleanup/cleanup.stream";
+import {
+  FastifyAdapter,
+  NestFastifyApplication,
+} from "@nestjs/platform-fastify";
 
 const bootstrap = async () => {
   const options: CustomStrategy = {
@@ -16,15 +20,18 @@ const bootstrap = async () => {
       },
       // Stream will be created if not exist
       // To work we need all this stream to be available
-      assertStreams: [bookingStream, cleanupStream],
+      assertStreams: [new BookingStream(), new CleanupStream()],
     }),
   };
 
   // hybrid microservice and web application
-  const app = await NestFactory.create(HotelBookingModule);
+  const app = await NestFactory.create<NestFastifyApplication>(
+    HotelBookingModule,
+    new FastifyAdapter()
+  );
   const microService = app.connectMicroservice(options);
-  microService.listen();
-  app.listen(3000);
+  await app.listen(3000);
+  await microService.listen();
   return app;
 };
 bootstrap();

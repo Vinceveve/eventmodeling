@@ -5,8 +5,8 @@ type RoomCleaningScheduledData = {
   date: Date;
 };
 export class RoomCleaningScheduledEvent extends AppCloudEvent {
-  readonly specversion: string = "1.0";
-  readonly type: string = this.constructor.name;
+  static readonly specversion: string = "1.0";
+  static readonly type: string = "RoomCleaningScheduledEvent";
   constructor(
     data: RoomCleaningScheduledData,
     source: string,

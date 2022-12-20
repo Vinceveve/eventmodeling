@@ -7,7 +7,7 @@ import { EventPattern, Ctx, Payload } from "@nestjs/microservices";
 
 import { ScheduleCleaningCommandHandler } from "../command/schedule-cleaning.command";
 import { RoomBookedEvent } from "../../../../../model/booking/event/room-booked.event";
-import { bookingStream } from "../../../../../model/booking/booking.stream";
+import { BookingStream } from "../../../../../model/booking/booking.stream";
 
 @Controller()
 export class BotNatsController {
@@ -15,7 +15,7 @@ export class BotNatsController {
 
   @EventPattern("ScheduleCleanup", {
     description: "Trigger cleaning side effect when room is booked",
-    subject: bookingStream.subjects[0],
+    subject: "booking.*.*.room-booked-event.>",
     deliverTo: "cleanupSaga",
     durable: "cleanupSaga",
     manualAck: true,

@@ -9,7 +9,7 @@ export class ManagerHttpController {
   constructor(private cleanRoomHandler: CleanRoomCommandHandler) {}
   @Put("/mutation/cleanup")
   @HttpCode(201)
-  async checkin(@Body() command: CleanRoomCommand) {
+  async cleanup(@Body() command: CleanRoomCommand) {
     return this.cleanRoomHandler.handle({
       ...command,
       source: this.constructor.name,
