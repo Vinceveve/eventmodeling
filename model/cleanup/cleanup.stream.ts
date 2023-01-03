@@ -3,6 +3,7 @@ import { StreamConfig } from "nats";
 
 export class CleanupStream implements Partial<StreamConfig> {
   readonly name: string = "cleanup";
+  static readonly stream: string = "cleanup";
   readonly description: string = "Cleaning domain with all its events";
   readonly subjects: string[] = ["cleanup.>"];
   static buildsubject({

@@ -1,4 +1,7 @@
-import { NatsJetStreamClient } from "nats-jetstream-transport";
+import {
+  NatsJetStreamClient,
+  NatsJetStreamManager,
+} from "nats-jetstream-transport";
 import { Injectable, ConflictException, Logger } from "@nestjs/common";
 import { RoomEntity } from "../../../../../model/admin/room.entity";
 import { BookingStream } from "../../../../../model/booking/booking.stream";
@@ -20,7 +23,10 @@ export interface CleanRoomCommand {
 @Injectable()
 export class CleanRoomCommandHandler {
   private readonly logger = new Logger(this.constructor.name);
-  constructor(private client: NatsJetStreamClient) {}
+  constructor(
+    private client: NatsJetStreamClient,
+    private manager: NatsJetStreamManager
+  ) {}
 
   async handle(command: CleanRoomCommand) {
     const source = this.constructor.name;
@@ -29,30 +35,23 @@ export class CleanRoomCommandHandler {
     const day = isoDate.toISOString().split("T")[0];
     const roomId = command.data.room.id;
 
-    // The room must have been cleaned up before
-    // subject must exists or we should crash
-    await this.client
-      .publish(
-        CleanupStream.buildsubject({
-          roomId,
-          day,
-          eventType: RoomCleaningScheduledEvent.type,
-          correlationId,
-        }),
-        Empty,
-        {
-          // Can not be a legit sequence, but throw with correct sequence
-          expect: { lastSubjectSequence: -1 },
-        }
-      )
-      .catch((e: NatsError) => {
-        if (e.api_error.description.indexOf("wrong last sequence: 0") == -1) {
-          return;
-        }
-        const error = `No cleanup was scheduled for room ${roomId} on ${day}, ignore #${correlationId}`;
-        this.logger.error(error);
-        throw new ConflictException(error);
-      });
+    // Cleanup should have been scheduled or we don't do it
+    const subjects = await (
+      await this.manager.streams()
+    ).info(CleanupStream.stream, {
+      subjects_filter: CleanupStream.buildsubject({
+        roomId,
+        day,
+        eventType: RoomCleaningScheduledEvent.type,
+        correlationId,
+      }),
+    });
+
+    if (subjects.state.subjects.length == 0) {
+      const error = `No cleanup was scheduled for room ${roomId} on ${day}, ignore #${correlationId}`;
+      this.logger.error(error);
+      throw new ConflictException(error);
+    }
 
     this.logger.debug(
       `Cleanup room ${roomId} for day ${day} #${correlationId}`
