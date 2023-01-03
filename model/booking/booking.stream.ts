@@ -1,12 +1,43 @@
 import { AppCloudEvent } from "../app/app-cloudevent.event";
 import { JetStreamPublishOptions, StreamConfig } from "nats";
+import {
+  NatsJetStreamClient,
+  NatsJetStreamManager,
+} from "nats-jetstream-transport";
+import { Injectable } from "@nestjs/common";
+import { BookingEvent } from "./event/booking.event";
 
-export class BookingStream implements Partial<StreamConfig> {
-  name: string = "booking";
-  description: string = "Booking domain with all its events";
-  subjects: string[] = ["booking.>"];
+@Injectable()
+export class BookingStream {
+  static readonly config: Partial<StreamConfig> = {
+    name: "booking",
+    description: "Booking domain with all its events",
+    subjects: ["booking.>"],
+  };
 
-  static buildSubject({
+  constructor(
+    private client: NatsJetStreamClient,
+    private manager: NatsJetStreamManager
+  ) {}
+  emit(event: BookingEvent, publishOptions?: Partial<JetStreamPublishOptions>) {
+    const subject = BookingStream.buildsubject({
+      roomId: event.data.room.id,
+      day: event.data.date,
+      eventType: event.type,
+      correlationId: event.correlationId,
+    });
+    return this.client.publish(subject, event, publishOptions);
+  }
+  async subjectExists(subject: string) {
+    const streamInfo = await (
+      await this.manager.streams()
+    ).info(BookingStream.config.name, {
+      subjects_filter: subject,
+    });
+    return streamInfo.state.subjects ? true : false;
+  }
+
+  static buildsubject({
     roomId,
     day,
     event,
@@ -25,17 +56,16 @@ export class BookingStream implements Partial<StreamConfig> {
       );
     }
     let type;
-    const hierarchy = ["booking", roomId, day];
+    const hierarchy = [BookingStream.config.name, roomId, day];
     type = event ? event.type : eventType;
     // To kebab case
     type = type.replace(
       /[A-Z]+(?![a-z])|[A-Z]/g,
-      (s: string, ofs: string) => (ofs ? "-" : "") + s.toLowerCase()
+      (s, ofs) => (ofs ? "-" : "") + s.toLowerCase()
     );
     hierarchy.push(type);
     const correlation = event ? event.correlationId : correlationId;
     hierarchy.push(correlation);
-    console.log(hierarchy.join("."));
     return hierarchy.join(".");
   }
 }

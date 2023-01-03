@@ -1,11 +1,11 @@
 import { BookingEntity } from "../../booking/entity/booking.entity";
-import { AppCloudEvent } from "../../app/app-cloudevent.event";
+import { BookingEvent } from "./booking.event";
 
-export class GuestCheckedInEvent extends AppCloudEvent {
+export class GuestCheckedInEvent extends BookingEvent {
   static readonly specversion: string = "1.0";
   static readonly type: string = "GuestCheckedInEvent";
   constructor(
-    data: Partial<BookingEntity>,
+    data: Pick<BookingEntity, "room" | "date" | "availability">,
     source: string,
     correlationId?: string,
     id?: string

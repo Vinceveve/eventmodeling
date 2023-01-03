@@ -20,7 +20,7 @@ const bootstrap = async () => {
       },
       // Stream will be created if not exist
       // To work we need all this stream to be available
-      assertStreams: [new BookingStream(), new CleanupStream()],
+      assertStreams: [BookingStream.config, CleanupStream.config],
     }),
   };
 

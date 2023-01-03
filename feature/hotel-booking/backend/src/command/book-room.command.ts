@@ -1,4 +1,3 @@
-import { NatsJetStreamClient } from "nats-jetstream-transport";
 import { Injectable, Logger, ConflictException } from "@nestjs/common";
 import { PubAck } from "nats";
 import { BookingStream } from "../../../../../model/booking/booking.stream";
@@ -14,7 +13,7 @@ export interface BookRoomCommand {
 @Injectable()
 export class BookRoomCommandHandler {
   private readonly logger = new Logger(this.constructor.name);
-  constructor(private client: NatsJetStreamClient) {}
+  constructor(private stream: BookingStream) {}
 
   async handle(command: BookRoomCommand) {
     const correlationId = command.correlationId;
@@ -27,16 +26,14 @@ export class BookRoomCommandHandler {
     );
 
     // Mark room booked if it's available
-    const event = new RoomBookedEvent(
-      { ...command.data, date: isoDate.toISOString() },
-      source,
-      correlationId
-    );
     const uniqueBookingSlug = `booked-${correlationId}`;
-    return await this.client
-      .publish(
-        BookingStream.buildSubject({ roomId, day, event }),
-        event,
+    return await this.stream
+      .emit(
+        new RoomBookedEvent(
+          { ...command.data, date: day },
+          source,
+          correlationId
+        ),
         // deduplication trick : booking slug is unique using message ID
         // dupe-window should be configured on stream, default 2mn
         { msgID: uniqueBookingSlug }

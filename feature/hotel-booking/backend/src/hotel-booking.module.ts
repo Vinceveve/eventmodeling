@@ -10,6 +10,8 @@ import { CheckinCommandHandler } from "./command/checkin.command";
 import { BookingAvailabilityQuery } from "./query/booking-availability.query";
 import { BotNatsController } from "./adapter/bot.nats.controller";
 import { ManagerHttpController } from "./adapter/manager.http.controller";
+import { BookingStream } from "../../../../model/booking/booking.stream";
+import { CleanupStream } from "../../../../model/cleanup/cleanup.stream";
 
 @Module({
   imports: [
@@ -18,8 +20,6 @@ import { ManagerHttpController } from "./adapter/manager.http.controller";
         servers: "127.0.0.1:4222",
         name: "hotel-booking-publisher",
       },
-
-      // TODO move stream config here ?
     }),
   ],
   controllers: [
@@ -29,13 +29,13 @@ import { ManagerHttpController } from "./adapter/manager.http.controller";
     ReadModelNatsController,
   ],
   providers: [
+    BookingStream,
+    CleanupStream,
     BookRoomCommandHandler,
     ScheduleCleaningCommandHandler,
     CleanRoomCommandHandler,
     CheckinCommandHandler,
-
     BookingAvailabilityQuery,
-
     BookingProjection,
   ],
 })

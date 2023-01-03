@@ -1,11 +1,45 @@
 import { AppCloudEvent } from "../app/app-cloudevent.event";
-import { StreamConfig } from "nats";
+import { JetStreamPublishOptions, StreamConfig } from "nats";
+import {
+  NatsJetStreamClient,
+  NatsJetStreamManager,
+} from "nats-jetstream-transport";
+import { Injectable } from "@nestjs/common";
+import { RoomCleanUpEvent } from "./event/room-clean-up.event";
 
-export class CleanupStream implements Partial<StreamConfig> {
-  readonly name: string = "cleanup";
-  static readonly stream: string = "cleanup";
-  readonly description: string = "Cleaning domain with all its events";
-  readonly subjects: string[] = ["cleanup.>"];
+@Injectable()
+export class CleanupStream {
+  static readonly config: Partial<StreamConfig> = {
+    name: "cleanup",
+    description: "Cleaning domain with all its events",
+    subjects: ["cleanup.>"],
+  };
+
+  constructor(
+    private client: NatsJetStreamClient,
+    private manager: NatsJetStreamManager
+  ) {}
+  emit(
+    event: RoomCleanUpEvent,
+    publishOptions?: Partial<JetStreamPublishOptions>
+  ) {
+    const subject = CleanupStream.buildsubject({
+      roomId: event.data.room.id,
+      day: event.data.date,
+      eventType: event.type,
+      correlationId: event.correlationId,
+    });
+    return this.client.publish(subject, event, publishOptions);
+  }
+  async subjectExists(subject: string) {
+    const streamInfo = await (
+      await this.manager.streams()
+    ).info(CleanupStream.config.name, {
+      subjects_filter: subject,
+    });
+    return streamInfo.state.subjects ? true : false;
+  }
+
   static buildsubject({
     roomId,
     day,
@@ -25,7 +59,7 @@ export class CleanupStream implements Partial<StreamConfig> {
       );
     }
     let type;
-    const hierarchy = ["cleanup", roomId, day];
+    const hierarchy = [CleanupStream.config.name, roomId, day];
     type = event ? event.type : eventType;
     // To kebab case
     type = type.replace(

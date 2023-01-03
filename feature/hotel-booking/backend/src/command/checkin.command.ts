@@ -1,8 +1,4 @@
-import {
-  NatsJetStreamClient,
-  NatsJetStreamKeyStore,
-  NatsJetStreamManager,
-} from "nats-jetstream-transport";
+import { NatsJetStreamKeyStore } from "nats-jetstream-transport";
 import { JSONCodec } from "nats";
 import { Injectable, Logger, ConflictException } from "@nestjs/common";
 import { GuestCheckedInEvent } from "../../../../../model/booking/event/guest-checked-in.event";
@@ -11,7 +7,6 @@ import {
   BookingEntity,
 } from "../../../../../model/booking/entity/booking.entity";
 import { BookingStream } from "../../../../../model/booking/booking.stream";
-import { RoomAvailableEvent } from "../../../../../model/booking/event/room-available.event";
 
 export interface CheckinCommand {
   source: string;
@@ -24,7 +19,7 @@ export class CheckinCommandHandler {
   private readonly logger = new Logger(this.constructor.name);
   private codec = JSONCodec();
   constructor(
-    private client: NatsJetStreamClient,
+    private stream: BookingStream,
     private keyStore: NatsJetStreamKeyStore
   ) {}
 
@@ -50,19 +45,22 @@ export class CheckinCommandHandler {
       throw new ConflictException(error);
     }
 
-    const event = new GuestCheckedInEvent(
-      {
-        ...command.data,
-        availability: Availabilities.occupied,
-      },
-      source,
-      correlationId
-    );
-    return await this.client
-      .publish(BookingStream.buildSubject({ roomId, day, event }), event, {
-        // Only one checkin available per day
-        expect: { lastSubjectSequence: 0 },
-      })
+    return await this.stream
+      .emit(
+        new GuestCheckedInEvent(
+          {
+            date: day,
+            room: command.data.room,
+            availability: Availabilities.occupied,
+          },
+          source,
+          correlationId
+        ),
+        {
+          // Only one checkin available per day
+          expect: { lastSubjectSequence: 0 },
+        }
+      )
       .catch((e) => {
         const error = `Can't checkin if room ${roomId} is already checked in : ${e.message} #${correlationId}`;
         this.logger.error(error);

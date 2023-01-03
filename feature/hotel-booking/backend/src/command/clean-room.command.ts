@@ -1,14 +1,9 @@
-import {
-  NatsJetStreamClient,
-  NatsJetStreamManager,
-} from "nats-jetstream-transport";
 import { Injectable, ConflictException, Logger } from "@nestjs/common";
 import { RoomEntity } from "../../../../../model/admin/room.entity";
 import { BookingStream } from "../../../../../model/booking/booking.stream";
 import { RoomAvailableEvent } from "../../../../../model/booking/event/room-available.event";
 import { CleanupStream } from "../../../../../model/cleanup/cleanup.stream";
 import { RoomCleanedUpEvent } from "../../../../../model/cleanup/event/room-cleaned-up.event";
-import { Empty, NatsError } from "nats";
 import { RoomCleaningScheduledEvent } from "../../../../../model/cleanup/event/room-cleaning-scheduled.event";
 
 export interface CleanRoomCommand {
@@ -24,8 +19,8 @@ export interface CleanRoomCommand {
 export class CleanRoomCommandHandler {
   private readonly logger = new Logger(this.constructor.name);
   constructor(
-    private client: NatsJetStreamClient,
-    private manager: NatsJetStreamManager
+    private stream: CleanupStream,
+    private bookingStream: BookingStream
   ) {}
 
   async handle(command: CleanRoomCommand) {
@@ -36,18 +31,17 @@ export class CleanRoomCommandHandler {
     const roomId = command.data.room.id;
 
     // Cleanup should have been scheduled or we don't do it
-    const subjects = await (
-      await this.manager.streams()
-    ).info(CleanupStream.stream, {
-      subjects_filter: CleanupStream.buildsubject({
+    // Meaning a subject should exists
+    const subjectExists = await this.stream.subjectExists(
+      CleanupStream.buildsubject({
         roomId,
         day,
         eventType: RoomCleaningScheduledEvent.type,
         correlationId,
-      }),
-    });
+      })
+    );
 
-    if (subjects.state.subjects.length == 0) {
+    if (!subjectExists) {
       const error = `No cleanup was scheduled for room ${roomId} on ${day}, ignore #${correlationId}`;
       this.logger.error(error);
       throw new ConflictException(error);
@@ -58,16 +52,10 @@ export class CleanRoomCommandHandler {
     );
     // Only one cleanup per day and per room
     // Meaning subject should not exists and this event position should be the first on the subject
-    await this.client
-      .publish(
-        CleanupStream.buildsubject({
-          roomId,
-          day,
-          correlationId,
-          eventType: RoomCleanedUpEvent.type,
-        }),
+    await this.stream
+      .emit(
         new RoomCleanedUpEvent(
-          { room: command.data.room, date: new Date() },
+          { room: command.data.room, date: day },
           source,
           correlationId
         ),
@@ -87,9 +75,6 @@ export class CleanRoomCommandHandler {
       source,
       correlationId
     );
-    return await this.client.publish(
-      BookingStream.buildSubject({ roomId, day, event: availableEvent }),
-      availableEvent
-    );
+    return await this.bookingStream.emit(availableEvent);
   }
 }

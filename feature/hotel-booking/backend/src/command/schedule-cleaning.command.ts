@@ -1,4 +1,3 @@
-import { NatsJetStreamClient } from "nats-jetstream-transport";
 import { ConflictException, Injectable, Logger } from "@nestjs/common";
 import { RoomCleaningScheduledEvent } from "../../../../../model/cleanup/event/room-cleaning-scheduled.event";
 import { HotelEntity } from "../../../../../model/admin/hotel.entity";
@@ -11,7 +10,7 @@ export interface ScheduleCleaningCommand {
   data: {
     hotel: Pick<HotelEntity, "id">;
     room: Pick<RoomEntity, "id">;
-    date: Date;
+    date: string;
   };
 }
 
@@ -19,7 +18,7 @@ export interface ScheduleCleaningCommand {
 @Injectable()
 export class ScheduleCleaningCommandHandler {
   private readonly logger = new Logger(this.constructor.name);
-  constructor(private client: NatsJetStreamClient) {}
+  constructor(private stream: CleanupStream) {}
 
   async handle(command: ScheduleCleaningCommand) {
     const source = this.constructor.name;
@@ -29,17 +28,9 @@ export class ScheduleCleaningCommandHandler {
     const roomId = command.data.room.id;
     this.logger.log(`Schedule cleaning for room ${roomId} #${correlationId}`);
 
-    const event = new RoomCleaningScheduledEvent(
-      command.data,
-      source,
-      correlationId
-    );
-    const subject = CleanupStream.buildsubject({ roomId, day, event });
-
-    const res = await this.client
-      .publish(
-        subject,
-        event,
+    const res = await this.stream
+      .emit(
+        new RoomCleaningScheduledEvent(command.data, source, correlationId),
         // Must be only one cleanup scheduled per day
         { expect: { lastSubjectSequence: 0 } }
       )

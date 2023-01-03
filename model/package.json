@@ -9,7 +9,9 @@
   ],
   "dependencies": {
     "nats": "^2.10.0",
-    "cloudevents": "^6.0.3"
+    "cloudevents": "^6.0.3",
+    "nats-jetstream-transport": "^0.2.0",
+    "@nestjs/common": "^9.2.1"
   },
     "scripts": {
     "test": "exit 0",
