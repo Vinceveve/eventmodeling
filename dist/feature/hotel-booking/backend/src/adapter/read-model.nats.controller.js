@@ -17,7 +17,6 @@ const nats_jetstream_transport_1 = require("nats-jetstream-transport");
 const common_1 = require("@nestjs/common");
 const microservices_1 = require("@nestjs/microservices");
 const booking_projection_1 = require("../projection/booking.projection");
-const booking_stream_1 = require("../../../../../model/booking/booking.stream");
 let ReadModelNatsController = class ReadModelNatsController {
     bookingState;
     constructor(bookingState) {
@@ -31,7 +30,7 @@ let ReadModelNatsController = class ReadModelNatsController {
 __decorate([
     (0, microservices_1.EventPattern)("BookingProjection", {
         description: "Maintain Booking read model state from events",
-        subject: booking_stream_1.bookingStream.subjects[0],
+        subject: "booking.>",
         durable: "bookingState",
         deliverTo: "bookingState",
         manualAck: true,

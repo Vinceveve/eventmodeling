@@ -18,7 +18,6 @@ const common_1 = require("@nestjs/common");
 const microservices_1 = require("@nestjs/microservices");
 const schedule_cleaning_command_1 = require("../command/schedule-cleaning.command");
 const room_booked_event_1 = require("../../../../../model/booking/event/room-booked.event");
-const booking_stream_1 = require("../../../../../model/booking/booking.stream");
 let BotNatsController = class BotNatsController {
     scheduleCleaning;
     constructor(scheduleCleaning) {
@@ -39,7 +38,7 @@ let BotNatsController = class BotNatsController {
 __decorate([
     (0, microservices_1.EventPattern)("ScheduleCleanup", {
         description: "Trigger cleaning side effect when room is booked",
-        subject: booking_stream_1.bookingStream.subjects[0],
+        subject: "booking.*.*.room-booked-event.>",
         deliverTo: "cleanupSaga",
         durable: "cleanupSaga",
         manualAck: true,

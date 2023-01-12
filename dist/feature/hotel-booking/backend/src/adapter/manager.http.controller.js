@@ -20,7 +20,7 @@ let ManagerHttpController = class ManagerHttpController {
     constructor(cleanRoomHandler) {
         this.cleanRoomHandler = cleanRoomHandler;
     }
-    async checkin(command) {
+    async cleanup(command) {
         return this.cleanRoomHandler.handle({
             ...command,
             source: this.constructor.name,
@@ -37,7 +37,7 @@ __decorate([
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [Object]),
     __metadata("design:returntype", Promise)
-], ManagerHttpController.prototype, "checkin", null);
+], ManagerHttpController.prototype, "cleanup", null);
 ManagerHttpController = __decorate([
     (0, common_1.Controller)(),
     __metadata("design:paramtypes", [clean_room_command_1.CleanRoomCommandHandler])

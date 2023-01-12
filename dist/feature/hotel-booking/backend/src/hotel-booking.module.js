@@ -19,6 +19,8 @@ const checkin_command_1 = require("./command/checkin.command");
 const booking_availability_query_1 = require("./query/booking-availability.query");
 const bot_nats_controller_1 = require("./adapter/bot.nats.controller");
 const manager_http_controller_1 = require("./adapter/manager.http.controller");
+const booking_stream_1 = require("../../../../model/booking/booking.stream");
+const cleanup_stream_1 = require("../../../../model/cleanup/cleanup.stream");
 let HotelBookingModule = class HotelBookingModule {
 };
 HotelBookingModule = __decorate([
@@ -38,6 +40,8 @@ HotelBookingModule = __decorate([
             read_model_nats_controller_1.ReadModelNatsController,
         ],
         providers: [
+            booking_stream_1.BookingStream,
+            cleanup_stream_1.CleanupStream,
             book_room_command_1.BookRoomCommandHandler,
             schedule_cleaning_command_1.ScheduleCleaningCommandHandler,
             clean_room_command_1.CleanRoomCommandHandler,

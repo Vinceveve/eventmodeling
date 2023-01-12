@@ -11,32 +11,48 @@ var __metadata = (this && this.__metadata) || function (k, v) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.CheckinCommandHandler = void 0;
 const nats_jetstream_transport_1 = require("nats-jetstream-transport");
+const nats_1 = require("nats");
 const common_1 = require("@nestjs/common");
 const guest_checked_in_event_1 = require("../../../../../model/booking/event/guest-checked-in.event");
 const booking_entity_1 = require("../../../../../model/booking/entity/booking.entity");
 const booking_stream_1 = require("../../../../../model/booking/booking.stream");
 let CheckinCommandHandler = class CheckinCommandHandler {
-    client;
+    stream;
+    keyStore;
     logger = new common_1.Logger(this.constructor.name);
-    constructor(client) {
-        this.client = client;
+    codec = (0, nats_1.JSONCodec)();
+    constructor(stream, keyStore) {
+        this.stream = stream;
+        this.keyStore = keyStore;
     }
     async handle(command) {
         const source = this.constructor.name;
         const correlationId = command.correlationId;
         const isoDate = new Date(command.data.date);
         const day = isoDate.toISOString().split("T")[0];
-        const data = {
-            ...command.data,
-            availabity: booking_entity_1.Availabilities.occupied,
-        };
-        return await this.client
-            .publish((0, booking_stream_1.bookingSubject)(command.data.room.id, day, correlationId), new guest_checked_in_event_1.GuestCheckedInEvent(data, source, correlationId), {
-            msgID: `checkin-${correlationId}-${command.data.client.id}`,
-            expect: { lastSubjectSequence: 2 },
+        const roomId = command.data.room.id;
+        const booking = await this.keyStore.assertBucket("booking");
+        const key = `booking.${roomId}.${day}`;
+        const state = await booking.get(key).then((entry) => {
+            return entry
+                ? this.codec.decode(entry.value)
+                : {};
+        });
+        if (state.availability != booking_entity_1.Availabilities.available) {
+            const error = `Can't checkin if room ${roomId} is not cleaned : current state is ${state.availability} #${correlationId}`;
+            this.logger.error(error);
+            throw new common_1.ConflictException(error);
+        }
+        return await this.stream
+            .emit(new guest_checked_in_event_1.GuestCheckedInEvent({
+            date: day,
+            room: command.data.room,
+            availability: booking_entity_1.Availabilities.occupied,
+        }, source, correlationId), {
+            expect: { lastSubjectSequence: 0 },
         })
             .catch((e) => {
-            const error = `Can't checkin if room is not clean ${command.data.room.id} or room already checked in : ${e.message} #${correlationId}`;
+            const error = `Can't checkin if room ${roomId} is already checked in : ${e.message} #${correlationId}`;
             this.logger.error(error);
             throw new common_1.ConflictException(error);
         });
@@ -44,7 +60,8 @@ let CheckinCommandHandler = class CheckinCommandHandler {
 };
 CheckinCommandHandler = __decorate([
     (0, common_1.Injectable)(),
-    __metadata("design:paramtypes", [nats_jetstream_transport_1.NatsJetStreamClient])
+    __metadata("design:paramtypes", [booking_stream_1.BookingStream,
+        nats_jetstream_transport_1.NatsJetStreamKeyStore])
 ], CheckinCommandHandler);
 exports.CheckinCommandHandler = CheckinCommandHandler;
 //# sourceMappingURL=checkin.command.js.map

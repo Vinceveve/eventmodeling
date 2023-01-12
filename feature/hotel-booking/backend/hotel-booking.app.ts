@@ -29,7 +29,9 @@ const bootstrap = async () => {
     HotelBookingModule,
     new FastifyAdapter()
   );
+
   const microService = app.connectMicroservice(options);
+
   await app.listen(3000);
   await microService.listen();
   return app;

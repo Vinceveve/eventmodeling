@@ -10,30 +10,36 @@ var __metadata = (this && this.__metadata) || function (k, v) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.ScheduleCleaningCommandHandler = void 0;
-const nats_jetstream_transport_1 = require("nats-jetstream-transport");
 const common_1 = require("@nestjs/common");
 const room_cleaning_scheduled_event_1 = require("../../../../../model/cleanup/event/room-cleaning-scheduled.event");
 const cleanup_stream_1 = require("../../../../../model/cleanup/cleanup.stream");
 let ScheduleCleaningCommandHandler = class ScheduleCleaningCommandHandler {
-    client;
+    stream;
     logger = new common_1.Logger(this.constructor.name);
-    constructor(client) {
-        this.client = client;
+    constructor(stream) {
+        this.stream = stream;
     }
     async handle(command) {
         const source = this.constructor.name;
         const correlationId = command.correlationId;
         const isoDate = new Date(command.data.date);
         const day = isoDate.toISOString().split("T")[0];
-        this.logger.log(`Schedule cleaning for room ${command.data.room.id} #${correlationId}`);
-        const res = await this.client.publish((0, cleanup_stream_1.cleanupSubject)(command.data.room.id, day, correlationId), new room_cleaning_scheduled_event_1.RoomCleaningScheduledEvent(command.data, source, correlationId), { msgID: `cleanup-${correlationId}` });
-        this.logger.log(`Cleaning scheduled for room ${command.data.room.id} #${correlationId}`);
+        const roomId = command.data.room.id;
+        this.logger.log(`Schedule cleaning for room ${roomId} #${correlationId}`);
+        const res = await this.stream
+            .emit(new room_cleaning_scheduled_event_1.RoomCleaningScheduledEvent(command.data, source, correlationId), { expect: { lastSubjectSequence: 0 } })
+            .catch((e) => {
+            const error = `Can't schedule cleaning if room ${roomId} has cleaning already scheduled #${correlationId}`;
+            this.logger.error(error);
+            throw new common_1.ConflictException(error);
+        });
+        this.logger.log(`Cleaning scheduled for room ${roomId} #${correlationId}`);
         return res;
     }
 };
 ScheduleCleaningCommandHandler = __decorate([
     (0, common_1.Injectable)(),
-    __metadata("design:paramtypes", [nats_jetstream_transport_1.NatsJetStreamClient])
+    __metadata("design:paramtypes", [cleanup_stream_1.CleanupStream])
 ], ScheduleCleaningCommandHandler);
 exports.ScheduleCleaningCommandHandler = ScheduleCleaningCommandHandler;
 //# sourceMappingURL=schedule-cleaning.command.js.map

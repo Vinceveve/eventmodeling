@@ -10,52 +10,54 @@ var __metadata = (this && this.__metadata) || function (k, v) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.CleanRoomCommandHandler = void 0;
-const nats_jetstream_transport_1 = require("nats-jetstream-transport");
 const common_1 = require("@nestjs/common");
 const booking_stream_1 = require("../../../../../model/booking/booking.stream");
 const room_available_event_1 = require("../../../../../model/booking/event/room-available.event");
 const cleanup_stream_1 = require("../../../../../model/cleanup/cleanup.stream");
 const room_cleaned_up_event_1 = require("../../../../../model/cleanup/event/room-cleaned-up.event");
-const nats_1 = require("nats");
+const room_cleaning_scheduled_event_1 = require("../../../../../model/cleanup/event/room-cleaning-scheduled.event");
 let CleanRoomCommandHandler = class CleanRoomCommandHandler {
-    client;
+    stream;
+    bookingStream;
     logger = new common_1.Logger(this.constructor.name);
-    constructor(client) {
-        this.client = client;
+    constructor(stream, bookingStream) {
+        this.stream = stream;
+        this.bookingStream = bookingStream;
     }
     async handle(command) {
         const source = this.constructor.name;
         const correlationId = command.correlationId;
         const isoDate = new Date(command.data.date);
         const day = isoDate.toISOString().split("T")[0];
-        const data = {
-            room: command.data.room,
-        };
-        const subject = (0, cleanup_stream_1.cleanupSubject)(command.data.room.id, day, correlationId);
-        this.logger.debug(`Cleanup room ${command.data.room.id}  for day ${day} #${correlationId}`);
-        const h = (0, nats_1.headers)();
-        h.set("Nats-Expected-Last-Subject-Sequence", "1");
-        h.set("Nats-Expected-Stream", cleanup_stream_1.cleanupStream.name);
-        await this.client
-            .publish(subject, new room_cleaned_up_event_1.RoomCleanedUpEvent({ ...data, date: new Date() }, source, correlationId), {
-            expect: {
-                streamName: cleanup_stream_1.cleanupStream.name,
-                lastSubjectSequence: 1,
-            },
-        })
-            .then(console.log)
+        const roomId = command.data.room.id;
+        const subjectExists = await this.stream.subjectExists(cleanup_stream_1.CleanupStream.buildsubject({
+            roomId,
+            day,
+            eventType: room_cleaning_scheduled_event_1.RoomCleaningScheduledEvent.type,
+            correlationId,
+        }));
+        if (!subjectExists) {
+            const error = `No cleanup was scheduled for room ${roomId} on ${day}, ignore #${correlationId}`;
+            this.logger.error(error);
+            throw new common_1.ConflictException(error);
+        }
+        this.logger.debug(`Cleanup room ${roomId} for day ${day} #${correlationId}`);
+        await this.stream
+            .emit(new room_cleaned_up_event_1.RoomCleanedUpEvent({ room: command.data.room, date: day }, source, correlationId), { expect: { lastSubjectSequence: 0 } })
             .catch((e) => {
-            const error = `Can't cleanup room ${command.data.room.id} is it booked ? or already clean ? ${e.message}`;
-            this.logger.error(`${error} #${correlationId}`);
+            const error = `Can't cleanup room ${roomId} it's already clean ${e.message} #${correlationId}`;
+            this.logger.error(error);
             throw new common_1.ConflictException(error);
         });
-        this.logger.debug(`Mark available room ${command.data.room.id} for day ${day} #${correlationId}`);
-        return await this.client.publish((0, booking_stream_1.bookingSubject)(command.data.room.id, day, correlationId), new room_available_event_1.RoomAvailableEvent({ ...data, date: new Date() }, source, correlationId));
+        this.logger.debug(`Mark room ${roomId} available for ${day} #${correlationId}`);
+        const availableEvent = new room_available_event_1.RoomAvailableEvent({ room: command.data.room, date: day }, source, correlationId);
+        return await this.bookingStream.emit(availableEvent);
     }
 };
 CleanRoomCommandHandler = __decorate([
     (0, common_1.Injectable)(),
-    __metadata("design:paramtypes", [nats_jetstream_transport_1.NatsJetStreamClient])
+    __metadata("design:paramtypes", [cleanup_stream_1.CleanupStream,
+        booking_stream_1.BookingStream])
 ], CleanRoomCommandHandler);
 exports.CleanRoomCommandHandler = CleanRoomCommandHandler;
 //# sourceMappingURL=clean-room.command.js.map

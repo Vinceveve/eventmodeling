@@ -43,7 +43,7 @@ let BookingProjection = class BookingProjection {
             await booking.create(key, this.codec.encode(newState));
         }
         else if (state != newState) {
-            this.logger.log(`State is different for ${key}, update it`);
+            this.logger.log(`State is different for ${key}, update it ${state.availability}`);
             await booking.put(key, this.codec.encode(newState));
         }
         return newState;

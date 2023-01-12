@@ -1,13 +1,10 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.RoomAvailableEvent = void 0;
-const app_cloudevent_event_1 = require("../../app/app-cloudevent.event");
-class RoomAvailableEvent extends app_cloudevent_event_1.AppCloudEvent {
-    specversion = "1.0";
-    type = "RoomAvailableEvent";
-    constructor(data, source, correlationId, id) {
-        super(data, source, correlationId, id);
-    }
+const booking_event_1 = require("./booking.event");
+class RoomAvailableEvent extends booking_event_1.BookingEvent {
+    static specversion = "1.0";
+    static type = "RoomAvailableEvent";
 }
 exports.RoomAvailableEvent = RoomAvailableEvent;
 //# sourceMappingURL=room-available.event.js.map

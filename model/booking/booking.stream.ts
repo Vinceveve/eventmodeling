@@ -19,19 +19,21 @@ export class BookingStream {
     private client: NatsJetStreamClient,
     private manager: NatsJetStreamManager
   ) {}
-  emit(event: BookingEvent, publishOptions?: Partial<JetStreamPublishOptions>) {
+  async emit(
+    event: BookingEvent,
+    publishOptions?: Partial<JetStreamPublishOptions>
+  ) {
     const subject = BookingStream.buildsubject({
       roomId: event.data.room.id,
       day: event.data.date,
       eventType: event.type,
       correlationId: event.correlationId,
     });
-    return this.client.publish(subject, event, publishOptions);
+    return await this.client.publish(subject, event, publishOptions);
   }
-  async subjectExists(subject: string) {
-    const streamInfo = await (
-      await this.manager.streams()
-    ).info(BookingStream.config.name, {
+  async subjectExists(subject: string): Promise<boolean> {
+    const stream = await this.manager.streams();
+    const streamInfo = await stream.info(BookingStream.config.name, {
       subjects_filter: subject,
     });
     return streamInfo.state.subjects ? true : false;
@@ -49,7 +51,7 @@ export class BookingStream {
     event?: AppCloudEvent;
     eventType?: string;
     correlationId?: string;
-  }) {
+  }): string {
     if (!event && !eventType) {
       throw new Error(
         "To generate a subject you should provide event or eventType"
